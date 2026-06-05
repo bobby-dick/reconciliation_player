@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Identification des joueurs — PadelKompet</title>
+<style>
+:root {
+  --bg: #ffffff; --bg2: #f5f5f3; --bg3: #eeede9;
+  --bg-info: #e6f1fb; --bg-success: #eaf3de; --bg-warning: #faeeda; --bg-danger: #fcebeb;
+  --tx: #1a1a18; --tx2: #5f5e5a; --tx3: #888780;
+  --tx-info: #185fa5; --tx-success: #3b6d11; --tx-warning: #854f0b; --tx-danger: #a32d2d;
+  --bd: rgba(26,26,24,0.12); --bd2: rgba(26,26,24,0.22);
+  --r: 8px; --rl: 12px;
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font); background: #e8e7e3; min-height: 100vh; padding: 2rem 1rem; color: var(--tx); }
+.page { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 1rem; }
+.section-label { font-size: 12px; font-weight: 500; color: var(--tx3); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 4px; }
+
+/* SVG icons */
+.ico { display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; }
+.ico svg { display:block; }
+
+/* Buttons */
+.btn { display:inline-flex; align-items:center; gap:5px; padding:6px 12px; border-radius:var(--r); font-size:12px; font-weight:500; border:0.5px solid var(--bd2); background:var(--bg); color:var(--tx); cursor:pointer; font-family:var(--font); transition:background .1s; }
+.btn:hover { background:var(--bg2); }
+.btn-green { background:#86BC25; border-color:#6ea01e; color:#1a3800; }
+.btn-green:hover { background:#78a820; }
+.btn-primary { background:var(--bg-info); border-color:transparent; color:var(--tx-info); }
+.btn-primary:hover { background:#cfe4f8; }
+.btn-danger { background:var(--bg-danger); border-color:transparent; color:var(--tx-danger); }
+.btn-danger:hover { background:#f7c1c1; }
+.btn-success { background:#86BC25; border-color:#6ea01e; color:#1a3800; }
+.btn-success:hover { background:#78a820; }
+.btn-sm { padding:5px 8px; }
+.btn-icon { padding:6px 8px; }
+.btn:disabled { opacity:.35; cursor:not-allowed; }
+
+/* Banner */
+.banner-wrap { background:var(--bg); border:0.5px solid var(--bd2); border-radius:var(--rl); overflow:hidden; }
+.banner-header { background:#2c2c2a; color:#fff; padding:10px 16px; display:flex; align-items:center; justify-content:space-between; }
+.banner-row { padding:10px 16px; display:flex; align-items:center; justify-content:space-between; border-top:0.5px solid var(--bd); }
+.banner-row-text { font-size:13px; }
+
+/* Table */
+.table-wrap { background:var(--bg); border:0.5px solid var(--bd); border-radius:var(--rl); overflow:hidden; }
+.toolbar { display:flex; align-items:center; justify-content:space-between; padding:10px 14px; border-bottom:0.5px solid var(--bd); }
+.toolbar-left { display:flex; align-items:center; gap:8px; }
+.toolbar-right { display:flex; align-items:center; gap:6px; }
+.pill { display:flex; align-items:center; gap:6px; padding:5px 12px; border-radius:20px; font-size:13px; font-weight:500; border:0.5px solid var(--bd2); }
+.badge-pt { font-size:11px; font-weight:500; padding:2px 8px; border-radius:20px; background:#e8f5d6; color:#2d6a00; border:0.5px solid #b8d98a; }
+.row { display:flex; align-items:center; padding:10px 14px; border-bottom:0.5px solid var(--bd); gap:0; transition:background .1s; }
+.row:last-child { border-bottom:none; }
+.row:hover { background:var(--bg2); }
+.pnum { width:28px; font-size:12px; color:var(--tx3); font-weight:500; flex-shrink:0; }
+.player { display:flex; align-items:center; gap:6px; flex:1; min-width:0; }
+.pid { font-size:12px; color:var(--tx3); width:44px; flex-shrink:0; }
+.pid.u { color:#BA7517; font-weight:500; }
+.pname { font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.pname.u { color:var(--tx2); font-style:italic; }
+.divv { width:0.5px; background:var(--bd); height:20px; margin:0 10px; flex-shrink:0; }
+.pbadge { font-size:11px; font-weight:500; padding:2px 8px; border-radius:4px; background:var(--bg2); color:var(--tx2); }
+.pbadge.pu { background:#EEEDFE; color:#3C3489; }
+.row-meta { display:flex; align-items:center; gap:8px; margin-left:auto; flex-shrink:0; }
+.ic-btn { cursor:pointer; opacity:.5; transition:opacity .1s; }
+.ic-btn:hover { opacity:1; }
+.ic-unresolved { cursor:pointer; }
+.ic-unresolved:hover svg { stroke:#EF9F27; }
+
+/* Shared result rows */
+.r-row { display:flex; align-items:center; gap:10px; padding:8px 14px; cursor:pointer; transition:background .1s; }
+.r-row:hover, .r-row.sel { background:var(--bg-info); }
+.r-radio { width:14px; height:14px; border-radius:50%; border:1.5px solid var(--bd2); flex-shrink:0; position:relative; transition:all .1s; }
+.r-radio.checked { border-color:var(--tx-info); background:var(--tx-info); }
+.r-radio.checked::after { content:''; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:5px; height:5px; background:#fff; border-radius:50%; }
+.r-av { width:28px; height:28px; border-radius:50%; background:var(--bg2); border:0.5px solid var(--bd); display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:500; color:var(--tx2); flex-shrink:0; }
+.r-av.sel { background:var(--bg-info); color:var(--tx-info); border-color:transparent; }
+.r-name { font-size:13px; font-weight:500; }
+.r-meta { font-size:11px; color:var(--tx2); }
+.badge-warn { font-size:11px; font-weight:500; padding:2px 8px; border-radius:20px; background:#FAEEDA; color:#633806; }
+.badge-done { font-size:11px; font-weight:500; padding:2px 8px; border-radius:20px; background:var(--bg-success); color:var(--tx-success); }
+.confirm-banner { background:var(--bg-warning); border:0.5px solid rgba(180,120,0,0.25); border-radius:var(--r); padding:10px 12px; margin-bottom:10px; }
+.confirm-text { font-size:12px; color:var(--tx-warning); margin-bottom:8px; line-height:1.5; }
+.confirm-actions { display:flex; gap:6px; justify-content:flex-end; }
+.footer-actions { display:flex; gap:8px; justify-content:flex-end; }
+.merged-state { padding:1.5rem 14px; display:flex; flex-direction:column; align-items:center; gap:10px; text-align:center; flex:1; justify-content:center; }
+.mchip { display:inline-flex; align-items:center; gap:8px; padding:7px 12px; border-radius:var(--r); }
+.mchip.old { text-decoration:line-through; color:var(--tx3); font-size:13px; background:var(--bg2); border:0.5px solid var(--bd); }
+.mchip.new { background:var(--bg-success); border:0.5px solid transparent; }
+.mchip-name { font-size:13px; font-weight:500; color:var(--tx-success); }
+.mchip-meta { font-size:11px; color:var(--tx-success); opacity:.8; }
+
+/* Slideover */
+.overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.3); z-index:100; }
+.overlay.open { display:block; }
+.slideover { position:fixed; top:0; right:0; bottom:0; width:320px; background:var(--bg); border-left:0.5px solid var(--bd2); display:flex; flex-direction:column; transform:translateX(100%); transition:transform .2s ease; z-index:101; }
+.slideover.open { transform:translateX(0); }
+.so-header { padding:12px 16px; border-bottom:0.5px solid var(--bd); display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+.so-source { padding:10px 14px; background:var(--bg2); border-bottom:0.5px solid var(--bd); flex-shrink:0; }
+.so-slabel { font-size:10px; font-weight:500; text-transform:uppercase; letter-spacing:.07em; color:var(--tx3); margin-bottom:4px; }
+.so-sname { font-size:15px; font-weight:500; }
+.so-smeta { font-size:12px; color:var(--tx2); margin-top:1px; }
+.so-search { padding:10px 14px; border-bottom:0.5px solid var(--bd); flex-shrink:0; }
+.so-search input { width:100%; font-size:13px; padding:7px 10px; border:0.5px solid var(--bd2); border-radius:var(--r); font-family:var(--font); color:var(--tx); background:var(--bg); outline:none; }
+.so-search input:focus { border-color:var(--tx-info); box-shadow:0 0 0 2px rgba(24,95,165,.15); }
+.so-results { flex:1; overflow-y:auto; padding:4px 0; }
+.so-footer { padding:10px 14px; border-top:0.5px solid var(--bd); flex-shrink:0; }
+
+/* Batch modal */
+.batch-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:200; align-items:flex-start; justify-content:center; padding:2rem 1rem; }
+.batch-overlay.open { display:flex; }
+.batch-modal { background:var(--bg); border:0.5px solid var(--bd2); border-radius:var(--rl); width:100%; max-width:680px; display:flex; flex-direction:column; max-height:calc(100vh - 4rem); overflow:hidden; }
+.batch-header { padding:14px 18px; border-bottom:0.5px solid var(--bd); display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+.progress-bar { height:3px; background:var(--bg2); flex-shrink:0; }
+.progress-fill { height:100%; background:#86BC25; transition:width .3s; }
+.batch-body { display:flex; flex:1; overflow:hidden; }
+.player-list { width:220px; border-right:0.5px solid var(--bd); display:flex; flex-direction:column; flex-shrink:0; }
+.player-list-items { flex:1; overflow-y:auto; }
+.player-item { padding:10px 14px; border-bottom:0.5px solid var(--bd); cursor:pointer; display:flex; align-items:center; gap:8px; transition:background .1s; }
+.player-item:hover { background:var(--bg2); }
+.player-item.active { background:var(--bg-info); }
+.pi-name { font-size:13px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.pi-name.active { color:var(--tx-info); }
+.pi-meta { font-size:11px; color:var(--tx3); }
+.list-nav { display:flex; align-items:center; justify-content:space-between; padding:8px 14px; border-top:0.5px solid var(--bd); flex-shrink:0; }
+.detail-panel { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+.detail-source { padding:12px 16px; background:var(--bg2); border-bottom:0.5px solid var(--bd); flex-shrink:0; }
+.src-label { font-size:10px; font-weight:500; text-transform:uppercase; letter-spacing:.07em; color:var(--tx3); margin-bottom:4px; }
+.batch-search { padding:10px 16px; border-bottom:0.5px solid var(--bd); flex-shrink:0; }
+.batch-search input { width:100%; font-size:13px; padding:7px 10px; border:0.5px solid var(--bd2); border-radius:var(--r); font-family:var(--font); color:var(--tx); background:var(--bg); outline:none; }
+.batch-search input:focus { border-color:var(--tx-info); box-shadow:0 0 0 2px rgba(24,95,165,.15); }
+.batch-results { flex:1; overflow-y:auto; padding:4px 0; }
+.detail-footer { padding:10px 16px; border-top:0.5px solid var(--bd); flex-shrink:0; }
+.done-state { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:2rem; text-align:center; }
+.done-icon { width:52px; height:52px; border-radius:50%; background:var(--bg-success); display:flex; align-items:center; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="section-label">Liste des participants — mode Playtomic actif</div>
+
+<!-- Banner -->
+<div class="banner-wrap" id="banner">
+  <div class="banner-header">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <div>
+        <div style="font-size:13px;font-weight:500;color:#fff;">Actions en attente</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.6);margin-top:1px;">Certaines actions nécessitent votre attention</div>
+      </div>
+    </div>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+  </div>
+  <div class="banner-row">
+    <span class="banner-row-text" id="banner-text"><strong id="banner-count">3</strong> joueurs n'ont pas pu être identifiés</span>
+    <button class="btn btn-primary" onclick="openBatch()">Identifier les joueurs</button>
+  </div>
+</div>
+
+<!-- Toolbar -->
+<div class="table-wrap">
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <div class="pill">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Inscrits (5)
+      </div>
+      <button class="btn btn-icon" aria-label="Rechercher">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </button>
+      <span class="badge-pt">Playtomic</span>
+    </div>
+    <div class="toolbar-right">
+      <button class="btn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Exporter
+      </button>
+      <button class="btn btn-icon" style="opacity:.35;cursor:not-allowed" title="Non disponible — mode Playtomic actif">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      </button>
+      <button class="btn btn-icon" style="opacity:.35;cursor:not-allowed" title="Non disponible — mode Playtomic actif">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+      <button class="btn btn-green" onclick="openBatch()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        Synchroniser
+      </button>
+      <button class="btn btn-icon">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Ligne 1 -->
+  <div class="row">
+    <span class="pnum">#1</span>
+    <div class="player">
+      <svg class="ico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--tx3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+      <span class="pid">8435</span><span class="pname">Romaric <b>Artu</b></span>
+    </div>
+    <div class="divv"></div>
+    <div class="player">
+      <svg class="ico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--tx3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+      <span class="pid">12210</span><span class="pname">Stephen <b>Hall</b></span>
+      <svg class="ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#E24B4A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" title="Email manquant"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+    </div>
+    <div class="row-meta"><span class="pbadge">20645</span><span class="ic-btn ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg></span><span class="ic-btn ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></span></div>
+  </div>
+
+  <!-- Ligne 2 -->
+  <div class="row">
+    <span class="pnum">#2</span>
+    <div class="player">
+      <svg class="ico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--tx3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+      <span class="pid">7500</span><span class="pname">Jérémy <b>Court</b></span>
+    </div>
+    <div class="divv"></div>
+    <div class="player">
+      <svg class="ico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--tx3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+      <span class="pid">16229</span><span class="pname">Antoine <b>Taupin</b></span>
+    </div>
+    <div class="row-meta"><span class="pbadge pu">23729</span><span class="ic-btn ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg></span><span class="ic-btn ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></span></div>
+  </div>
+
+  <!-- Ligne 3 — non résolu -->
+  <div class="row">
+    <span class="pnum">#3</span>
+    <div class="player">
+      <svg class="ico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--tx3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+      <span class="pid u" id="id-p3a">110000</span>
+      <span class="pname u" id="name-p3a">CharlesL</span>
+      <span class="ic-unresolved ico" id="icon-p3a" onclick="openSlide('CharlesL','charlesl@gmail.com','p3a')" title="Joueur non identifié">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#BA7517" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><line x1="12" y1="17" x2="12" y2="17.5"/><line x1="12" y1="20" x2="12" y2="20.5"/></svg>
+      </span>
+    </div>
+    <div class="divv"></div>
+    <div class="player">
+      <svg class="ico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--tx3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+      <span class="pid">15328</span><span class="pname">Steeve <b>Brancheriau</b></span>
+    </div>
+    <div class="row-meta"><span class="pbadge" id="badge-p3">125328</span><span class="ic-btn ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg></span><span class="ic-btn ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></span></div>
+  </div>
+
+  <!-- Ligne 4 — non résolu -->
+  <div class="row">
+    <span class="pnum">#4</span>
+    <div class="player">
+      <svg class="ico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--tx3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+      <span class="pid">15064</span><span class="pname">Youri <b>Roux</b></span>
+    </div>
+    <div class="divv"></div>
+    <div class="player">
+      <svg class="ico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--tx3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+      <span class="pid u" id="id-p4b">110000</span>
+      <span class="pname u" id="name-p4b">Chacha</span>
+      <span class="ic-unresolved ico" id="icon-p4b" onclick="openSlide('Chacha','chacha75@hotmail.com','p4b')" title="Joueur non identifié">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#BA7517" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><line x1="12" y1="17" x2="12" y2="17.5"/><line x1="12" y1="20" x2="12" y2="20.5"/></svg>
+      </span>
+    </div>
+    <div class="row-meta"><span class="pbadge" id="badge-p4">125064</span><span class="ic-btn ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg></span><span class="ic-btn ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></span></div>
+  </div>
+
+  <!-- Ligne 5 — non résolu -->
+  <div class="row">
+    <span class="pnum">#5</span>
+    <div class="player">
+      <svg class="ico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--tx3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+      <span class="pid u" id="id-p5a">110000</span>
+      <span class="pname u" id="name-p5a">Nico75</span>
+      <span class="ic-unresolved ico" id="icon-p5a" onclick="openSlide('Nico75','nico75@gmail.com','p5a')" title="Joueur non identifié">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#BA7517" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><line x1="12" y1="17" x2="12" y2="17.5"/><line x1="12" y1="20" x2="12" y2="20.5"/></svg>
+      </span>
+    </div>
+    <div class="divv"></div>
+    <div class="player">
+      <svg class="ico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--tx3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+      <span class="pid">20000</span><span class="pname">Louis henri <b>Lentz</b></span>
+      <svg class="ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#E24B4A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" title="Email manquant"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+    </div>
+    <div class="row-meta"><span class="pbadge">130000</span><span class="ic-btn ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg></span><span class="ic-btn ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></span></div>
+  </div>
+
+</div><!-- /table-wrap -->
+</div><!-- /page -->
+
+<!-- Overlay slideover -->
+<div class="overlay" id="so-overlay" onclick="closeSlide(true)"></div>
+<div class="slideover" id="slideover">
+  <div class="so-header">
+    <span style="font-size:13px;font-weight:500;">Identifier le joueur</span>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span class="badge-warn">Non identifié</span>
+      <button class="btn btn-sm btn-icon" onclick="closeSlide(true)" style="border:none;background:none;padding:4px;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--tx2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="so-source">
+    <div class="so-slabel">Depuis Playtomic</div>
+    <div class="so-sname" id="so-name" style="font-size:15px;font-weight:500;"></div>
+    <div class="so-smeta" id="so-email"></div>
+    <div class="so-smeta" style="margin-top:2px;color:var(--tx3);">Classement provisoire : 110 000</div>
+  </div>
+  <div class="so-search" id="so-search-block">
+    <input type="text" placeholder="Rechercher nom, prénom…" id="so-input">
+  </div>
+  <div class="so-results" id="so-results"></div>
+  <div class="so-footer" id="so-footer"></div>
+</div>
+
+<!-- Batch modal -->
+<div class="batch-overlay" id="batch-overlay">
+  <div class="batch-modal">
+    <div class="batch-header">
+      <div>
+        <div style="font-size:14px;font-weight:500;">Identification des joueurs</div>
+        <div style="font-size:12px;color:var(--tx2);margin-top:2px;">P250 Hommes — 4 juin 2026</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span id="b-badge" class="badge-warn">3 à traiter</span>
+        <button class="btn btn-sm btn-icon" onclick="closeBatch()" style="padding:5px 8px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="b-progress" style="width:0%"></div></div>
+    <div class="batch-body" id="b-body">
+      <div class="player-list">
+        <div class="player-list-items">
+          <div class="player-item active" onclick="bSelectPlayer(0)" id="b-pi-0">
+            <span class="ico" id="b-icon-0"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#BA7517" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><line x1="12" y1="17" x2="12" y2="17.5"/><line x1="12" y1="20" x2="12" y2="20.5"/></svg></span>
+            <div><div class="pi-name active" id="b-name-0">CharlesL</div><div class="pi-meta" id="b-meta-0">110 000</div></div>
+          </div>
+          <div class="player-item" onclick="bSelectPlayer(1)" id="b-pi-1">
+            <span class="ico" id="b-icon-1"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#BA7517" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><line x1="12" y1="17" x2="12" y2="17.5"/><line x1="12" y1="20" x2="12" y2="20.5"/></svg></span>
+            <div><div class="pi-name" id="b-name-1">Chacha</div><div class="pi-meta" id="b-meta-1">110 000</div></div>
+          </div>
+          <div class="player-item" onclick="bSelectPlayer(2)" id="b-pi-2">
+            <span class="ico" id="b-icon-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#BA7517" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><line x1="12" y1="17" x2="12" y2="17.5"/><line x1="12" y1="20" x2="12" y2="20.5"/></svg></span>
+            <div><div class="pi-name" id="b-name-2">Nico75</div><div class="pi-meta" id="b-meta-2">110 000</div></div>
+          </div>
+        </div>
+        <div class="list-nav">
+          <button class="btn btn-sm" id="b-prev" onclick="bPrev()" disabled>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+          </button>
+          <span style="font-size:12px;color:var(--tx2);" id="b-counter">1 / 3</span>
+          <button class="btn btn-sm" id="b-next" onclick="bNext()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="detail-panel">
+        <div class="detail-source">
+          <div class="src-label">Depuis Playtomic</div>
+          <div style="font-size:15px;font-weight:500;" id="b-d-name">CharlesL</div>
+          <div style="font-size:12px;color:var(--tx2);margin-top:1px;" id="b-d-email">charlesl@gmail.com</div>
+          <div style="font-size:12px;color:var(--tx3);margin-top:2px;">Classement provisoire : 110 000</div>
+        </div>
+        <div class="batch-search" id="b-search-block">
+          <input type="text" placeholder="Rechercher nom, prénom…" id="b-search-input">
+        </div>
+        <div class="batch-results" id="b-results"></div>
+        <div class="detail-footer" id="b-footer"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var RESULTS_HTML =
+  '<div class="r-row sel" onclick="soSelectResult(this)"><div class="r-radio checked"></div><div class="r-av sel">CL</div><div><div class="r-name">Charles Laurent</div><div class="r-meta">#18209 · 34 ans · Club de Boulogne</div></div></div>' +
+  '<div class="r-row" onclick="soSelectResult(this)"><div class="r-radio"></div><div class="r-av">CL</div><div><div class="r-name">Charles Lebrun</div><div class="r-meta">#22401 · 28 ans · Club de Lyon</div></div></div>' +
+  '<div class="r-row" onclick="soSelectResult(this)"><div class="r-radio"></div><div class="r-av">CL</div><div><div class="r-name">Charles Lemonnier</div><div class="r-meta">#31087 · 41 ans · Club de Nantes</div></div></div>';
+var B_RESULTS_HTML = RESULTS_HTML.replace(/soSelectResult/g,'bSelectResult');
+var iconWarnSVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#BA7517" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><line x1="12" y1="17" x2="12" y2="17.5"/><line x1="12" y1="20" x2="12" y2="20.5"/></svg>';
+var iconOkSVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--tx-success)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+
+var players = [
+  {id:'p3a', name:'CharlesL', email:'charlesl@gmail.com'},
+  {id:'p4b', name:'Chacha', email:'chacha75@hotmail.com'},
+  {id:'p5a', name:'Nico75', email:'nico75@gmail.com'}
+];
+var bStates=[null,null,null], bStateData=[null,null,null];
+var bCurrent=0, bTotal=3;
+var bSelName='Charles Laurent', bSelMeta='#18209 · 34 ans · Club de Boulogne';
+var soCurrentId=null, soSelName='Charles Laurent', soSelMeta='#18209 · 34 ans · Club de Boulogne';
+var unresolvedIds = ['p3a','p4b','p5a'];
+
+function updateBanner() {
+  var rem = unresolvedIds.filter(function(id){ var el=document.getElementById('icon-'+id); return el && el.getAttribute('data-resolved')!=='1'; }).length;
+  document.getElementById('banner').style.display = rem>0 ? '' : 'none';
+  if(rem>0) document.getElementById('banner-count').textContent = rem;
+}
+
+function markListResolved(pid, resolvedName, resolvedId) {
+  var ne=document.getElementById('name-'+pid), ie=document.getElementById('id-'+pid), ic=document.getElementById('icon-'+pid);
+  if(ne){ ne.classList.remove('u'); ne.innerHTML = resolvedName.split(' ').slice(0,-1).join(' ')+' <b>'+resolvedName.split(' ').slice(-1)[0]+'</b>'; }
+  if(ie){ ie.classList.remove('u'); ie.textContent=resolvedId; }
+  if(ic){ ic.innerHTML=iconOkSVG; ic.style.cursor='default'; ic.onclick=null; ic.setAttribute('data-resolved','1'); }
+  updateBanner();
+}
+
+/* SLIDEOVER */
+function openSlide(name,email,pid) {
+  soCurrentId=pid; soSelName='Charles Laurent'; soSelMeta='#18209 · 34 ans · Club de Boulogne';
+  document.getElementById('so-name').textContent=name;
+  document.getElementById('so-email').textContent=email;
+  document.getElementById('so-input').value='';
+  document.getElementById('so-search-block').style.display='';
+  document.getElementById('so-results').innerHTML=RESULTS_HTML;
+  soResetFooter();
+  document.getElementById('so-overlay').classList.add('open');
+  document.getElementById('slideover').classList.add('open');
+}
+function closeSlide(skipResolve){ if(!skipResolve && soCurrentId){ var ie=document.getElementById('id-'+soCurrentId); if(ie) ie.style.color='var(--tx3)'; updateBanner(); } document.getElementById('so-overlay').classList.remove('open'); document.getElementById('slideover').classList.remove('open'); }
+function soSelectResult(row){ document.querySelectorAll('#so-results .r-row').forEach(function(r){ r.classList.remove('sel'); r.querySelector('.r-radio').classList.remove('checked'); r.querySelector('.r-av').classList.remove('sel'); }); row.classList.add('sel'); row.querySelector('.r-radio').classList.add('checked'); row.querySelector('.r-av').classList.add('sel'); soSelName=row.querySelector('.r-name').textContent; soSelMeta=row.querySelector('.r-meta').textContent; }
+function soResetFooter(){ document.getElementById('so-footer').innerHTML='<div class="footer-actions"><button class="btn" onclick="soSkip()">Laisser tel quel</button><button class="btn btn-primary" onclick="soAskConfirm()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Fusionner</button></div>'; }
+function soSkip(){
+  var ie=document.getElementById('id-'+soCurrentId); if(ie) ie.style.color='var(--tx3)';
+  var ic=document.getElementById('icon-'+soCurrentId); if(ic) ic.setAttribute('data-resolved','1');
+  updateBanner();
+  syncBatchState(soCurrentId,'skipped',null,null);
+  document.getElementById('so-overlay').classList.remove('open'); document.getElementById('slideover').classList.remove('open');
+}
+function syncBatchState(pid,state,resolvedName,resolvedMeta){
+  var idx=-1; for(var i=0;i<players.length;i++){ if(players[i].id===pid){idx=i;break;} }
+  if(idx===-1) return;
+  bStates[idx]=state;
+  if(state==='merged' && resolvedName){
+    var initials=resolvedName.split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);
+    bStateData[idx]={name:resolvedName,meta:resolvedMeta,initials:initials};
+    document.getElementById('b-icon-'+idx).innerHTML=iconOkSVG;
+    document.getElementById('b-name-'+idx).textContent=resolvedName;
+    document.getElementById('b-meta-'+idx).textContent=resolvedMeta.split('·')[0].trim();
+  } else if(state==='skipped'){
+    document.getElementById('b-icon-'+idx).innerHTML=iconOkSVG;
+    document.getElementById('b-meta-'+idx).style.color='var(--tx3)';
+  }
+  var done=bStates.filter(function(s){return s!==null;}).length;
+  var rem=bTotal-done;
+  document.getElementById('b-progress').style.width=Math.round(done/bTotal*100)+'%';
+  var b=document.getElementById('b-badge');
+  if(rem===0){b.textContent='Terminé';b.className='badge-done';}
+  else{b.textContent=rem+' à traiter';b.className='badge-warn';}
+  if(bCurrent===idx && document.getElementById('batch-overlay').classList.contains('open')) bSelectPlayer(idx);
+}
+function soAskConfirm(){ var n=document.getElementById('so-name').textContent; document.getElementById('so-footer').innerHTML='<div class="confirm-banner"><div class="confirm-text">Fusionner <strong>'+n+'</strong> avec <strong>'+soSelName+'</strong> ?<br>Cette action est irréversible.</div><div class="confirm-actions"><button class="btn btn-sm" onclick="soResetFooter()">Annuler</button><button class="btn btn-sm btn-danger" onclick="soConfirmMerge()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Confirmer la fusion</button></div></div>'; }
+function soConfirmMerge(){
+  var initials=soSelName.split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);
+  var oldName=document.getElementById('so-name').textContent;
+  document.getElementById('so-search-block').style.display='none';
+  document.getElementById('so-results').innerHTML='<div class="merged-state"><div class="mchip old"><span>'+oldName+'</span></div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--tx3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg><div class="mchip new"><div class="r-av sel" style="width:28px;height:28px;">'+initials+'</div><div><div class="mchip-name">'+soSelName+'</div><div class="mchip-meta">'+soSelMeta+'</div></div></div><div style="font-size:12px;color:var(--tx3);margin-top:4px;">Fusion effectuée</div></div>';
+  document.getElementById('so-footer').innerHTML='';
+  var ic=document.getElementById('icon-'+soCurrentId);
+  if(ic) ic.setAttribute('data-resolved','1');
+  markListResolved(soCurrentId, soSelName, soSelMeta.split('·')[0].replace('#','').trim());
+  syncBatchState(soCurrentId, 'merged', soSelName, soSelMeta);
+}
+
+/* BATCH */
+function openBatch(){
+  bCurrent=0; bStates=[null,null,null]; bStateData=[null,null,null];
+  bSelName='Charles Laurent'; bSelMeta='#18209 · 34 ans · Club de Boulogne';
+  [0,1,2].forEach(function(i){ document.getElementById('b-icon-'+i).innerHTML=iconWarnSVG; document.getElementById('b-name-'+i).textContent=players[i].name; document.getElementById('b-meta-'+i).textContent='110 000'; document.getElementById('b-pi-'+i).classList.remove('active'); document.getElementById('b-name-'+i).classList.remove('active'); });
+  document.getElementById('b-progress').style.width='0%';
+  document.getElementById('b-badge').textContent='3 à traiter'; document.getElementById('b-badge').className='badge-warn';
+  bSelectPlayer(0);
+  document.getElementById('batch-overlay').classList.add('open');
+}
+function closeBatch(){ document.getElementById('batch-overlay').classList.remove('open'); }
+function bSelectPlayer(idx){
+  bCurrent=idx;
+  document.querySelectorAll('.player-item').forEach(function(el,i){ el.classList.toggle('active',i===idx); });
+  document.querySelectorAll('.pi-name').forEach(function(el,i){ el.classList.toggle('active',i===idx); });
+  document.getElementById('b-counter').textContent=(idx+1)+' / '+bTotal;
+  document.getElementById('b-prev').disabled=idx===0;
+  document.getElementById('b-next').disabled=idx===bTotal-1;
+  document.getElementById('b-d-name').textContent=players[idx].name;
+  document.getElementById('b-d-email').textContent=players[idx].email;
+  var sb=document.getElementById('b-search-block'), res=document.getElementById('b-results'), ft=document.getElementById('b-footer');
+  if(bStates[idx]==='merged'){
+    var d=bStateData[idx]; sb.style.display='none';
+    res.innerHTML='<div class="merged-state"><div class="mchip old"><span>'+players[idx].name+'</span></div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--tx3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg><div class="mchip new"><div class="r-av sel" style="width:28px;height:28px;">'+d.initials+'</div><div><div class="mchip-name">'+d.name+'</div><div class="mchip-meta">'+d.meta+'</div></div></div><div style="font-size:12px;color:var(--tx3);margin-top:4px;">Fusion effectuée</div></div>';
+    ft.innerHTML='';
+  } else if(bStates[idx]==='skipped'){
+    sb.style.display='none';
+    res.innerHTML='<div style="padding:2rem 16px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px;min-height:160px;justify-content:center"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--tx3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><div style="font-size:13px;color:var(--tx2);">Laissé tel quel</div><div style="font-size:12px;color:var(--tx3);">Classement provisoire : 110 000</div></div>';
+    ft.innerHTML='';
+  } else {
+    sb.style.display=''; document.getElementById('b-search-input').value='';
+    bSelName='Charles Laurent'; bSelMeta='#18209 · 34 ans · Club de Boulogne';
+    res.innerHTML=B_RESULTS_HTML; bResetFooter();
+  }
+}
+function bSelectResult(row){ document.querySelectorAll('#b-results .r-row').forEach(function(r){ r.classList.remove('sel'); r.querySelector('.r-radio').classList.remove('checked'); r.querySelector('.r-av').classList.remove('sel'); }); row.classList.add('sel'); row.querySelector('.r-radio').classList.add('checked'); row.querySelector('.r-av').classList.add('sel'); bSelName=row.querySelector('.r-name').textContent; bSelMeta=row.querySelector('.r-meta').textContent; }
+function bResetFooter(){ document.getElementById('b-footer').innerHTML='<div class="footer-actions"><button class="btn" onclick="bSkip()">Laisser tel quel</button><button class="btn btn-primary" onclick="bAskConfirm()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Fusionner</button></div>'; }
+function bAskConfirm(){ document.getElementById('b-footer').innerHTML='<div class="confirm-banner"><div class="confirm-text">Fusionner <strong>'+players[bCurrent].name+'</strong> avec <strong>'+bSelName+'</strong> ?<br>Cette action est irréversible.</div><div class="confirm-actions"><button class="btn btn-sm" onclick="bResetFooter()">Annuler</button><button class="btn btn-sm btn-danger" onclick="bConfirmMerge()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Confirmer la fusion</button></div></div>'; }
+function bConfirmMerge(){
+  var initials=bSelName.split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);
+  bStateData[bCurrent]={name:bSelName,meta:bSelMeta,initials:initials};
+  bStates[bCurrent]='merged';
+  document.getElementById('b-icon-'+bCurrent).innerHTML=iconOkSVG;
+  document.getElementById('b-name-'+bCurrent).textContent=bSelName;
+  document.getElementById('b-meta-'+bCurrent).textContent=bSelMeta.split('·')[0].trim();
+  markListResolved(players[bCurrent].id, bSelName, bSelMeta.split('·')[0].replace('#','').trim());
+  bUpdateProgress(); bSelectPlayer(bCurrent);
+  if(bCurrent<bTotal-1) setTimeout(function(){bSelectPlayer(bCurrent+1);},400);
+}
+function bSkip(){ bStates[bCurrent]='skipped'; document.getElementById('b-icon-'+bCurrent).innerHTML=iconOkSVG; document.getElementById('b-meta-'+bCurrent).style.color='var(--tx3)'; var ie=document.getElementById('id-'+players[bCurrent].id); if(ie) ie.style.color='var(--tx3)'; var ic=document.getElementById('icon-'+players[bCurrent].id); if(ic){ic.setAttribute('data-resolved','1');} updateBanner(); bUpdateProgress(); bSelectPlayer(bCurrent); if(bCurrent<bTotal-1) setTimeout(function(){bSelectPlayer(bCurrent+1);},300); }
+function bUpdateProgress(){
+  var done=bStates.filter(function(s){return s!==null;}).length, rem=bTotal-done;
+  document.getElementById('b-progress').style.width=Math.round(done/bTotal*100)+'%';
+  var b=document.getElementById('b-badge');
+  if(rem===0){ b.textContent='Terminé'; b.className='badge-done'; setTimeout(bShowDone,600); }
+  else { b.textContent=rem+' à traiter'; b.className='badge-warn'; }
+}
+function bShowDone(){ document.getElementById('b-body').innerHTML='<div class="done-state"><div class="done-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--tx-success)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><div style="font-size:15px;font-weight:500;">Identification terminée</div><div style="font-size:13px;color:var(--tx2);">Tous les joueurs ont été traités.<br>Les fusions sont effectives dans la liste des participants.</div><button class="btn btn-success" style="margin-top:8px;" onclick="closeBatch()">Retour à la liste <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button></div>'; }
+function bPrev(){ if(bCurrent>0) bSelectPlayer(bCurrent-1); }
+function bNext(){ if(bCurrent<bTotal-1) bSelectPlayer(bCurrent+1); }
+
+updateBanner();
+</script>
+</body>
+</html>
